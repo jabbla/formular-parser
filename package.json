@@ -1,0 +1,16 @@
+{
+  "name": "formual",
+  "version": "1.0.0",
+  "description": "数学公式的语法分析器",
+  "main": "index.js",
+  "scripts": {
+    "dev": "rollup -c -w",
+    "build": "rollup -c",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jabbla",
+  "license": "ISC",
+  "devDependencies": {
+    "rollup": "^1.32.0"
+  }
+}
