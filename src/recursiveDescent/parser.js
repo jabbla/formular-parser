@@ -1,6 +1,6 @@
-import { CHAR_MAPS, tokenTypeEq } from './token';
-import { error } from './utils';
-import lexer from './lexer';
+import { CHAR_MAPS, tokenTypeEq } from '../token';
+import { error } from '../utils';
+import lexer from '../lexer';
 
 function createAstNode(defaultNode, transformer) {
     return transformer? transformer(defaultNode) : defaultNode;
