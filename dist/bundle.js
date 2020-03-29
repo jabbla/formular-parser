@@ -141,6 +141,24 @@
         return ast;
     }
 
+    function createStop(processor) {
+        return () => ({
+            isStop: true,
+            astCreator(astArray) {
+                return processor(astArray);
+            }
+        });
+    }
+
+    const ExpStop = createStop((astArray) => {
+        const centerIndex = astArray.length - 2;
+        astArray.splice(centerIndex - 1, 3, {
+            ...astArray[centerIndex],
+            leftNode: astArray[centerIndex - 1],
+            rightNode: astArray[centerIndex + 1],
+        });
+    });
+
     /**
      * Sentence -> AddExp
      */
@@ -166,7 +184,7 @@
      */
     function AddExp1() {
         return {
-            bnf: [add, MulExp, AddExp1],
+            bnf: [add, MulExp, ExpStop, AddExp1],
             firstSet: [CHAR_MAPS.PLUS, CHAR_MAPS.SUBTRACT],
             hasEpsilon: true,
             followSet: [CHAR_MAPS.RIGHT_PARENTHESES, CHAR_MAPS.END],
@@ -188,7 +206,7 @@
      */
     function MulExp1() {
         return {
-            bnf: [mul, Exp, MulExp1],
+            bnf: [mul, Exp, ExpStop, MulExp1],
             firstSet: [CHAR_MAPS.MULTIPLE, CHAR_MAPS.DIVISION],
             hasEpsilon: true,
             followSet: [CHAR_MAPS.PLUS, CHAR_MAPS.SUBTRACT, CHAR_MAPS.RIGHT_PARENTHESES, CHAR_MAPS.END],
@@ -223,20 +241,33 @@
         };
     }
 
-    function multiple() {
+    function multiple(token) {
         return {
             bnf: [],
             firstSet: [CHAR_MAPS.MULTIPLE],
+            astCreator() {
+                return {
+                    opt: token.type,
+                    leftNode: {},
+                    rightNode: {},
+                };
+            }
         };
     }
 
-    function division() {
+    function division(token) {
         return {
             bnf: [],
             firstSet: [CHAR_MAPS.DIVISION],
+            astCreator() {
+                return {
+                    opt: token.type,
+                    leftNode: {},
+                    rightNode: {},
+                };
+            }
         };
     }
-
 
     /**
      * add -> + | -
@@ -250,24 +281,44 @@
         };
     }
 
-    function plus() {
+    function plus(token) {
         return {
             bnf: [],
             firstSet: [CHAR_MAPS.PLUS],
+            astCreator() {
+                return {
+                    opt: token.type,
+                    leftNode: {},
+                    rightNode: {},
+                };
+            }
         };
     }
 
-    function subtract() {
+    function subtract(token) {
         return {
             bnf: [],
             firstSet: [CHAR_MAPS.SUBTRACT],
+            astCreator() {
+                return {
+                    opt: token.type,
+                    leftNode: {},
+                    rightNode: {},
+                };
+            }
         };
     }
 
-    function alphabet() {
+    function alphabet(token) {
         return {
             bnf: [],
             firstSet: [CHAR_MAPS.ALPHABET],
+            astCreator() {
+                return {
+                    opt: 'atomic',
+                    value: token.lexeme,
+                };
+            }
         };
     }
 
@@ -289,9 +340,9 @@
         let index = 0;
         const tokens = lexer(input);
         const stack = [Sentence];
+        const astArray = [];
 
         function match(gram) {
-            console.log(index);
             return gram.firstSet.some(charMap => tokenTypeEq(tokens[index], charMap));
         }
 
@@ -302,12 +353,27 @@
         function isTerminal(gram) {
             return !gram.bnf.length;
         }
+
+        function isStop(gram) {
+            return !!gram.isStop;
+        }
+
+        function processTerminal(gram) {
+            const { astCreator } = gram;
+            if(astCreator) {
+                astArray.push(astCreator());
+            }
+        }
         
         while(stack.length) {
             const topItem = stack[0](tokens[index]);
-            if(match(topItem)) {
+            if(isStop(topItem)) {
+                topItem.astCreator(astArray);
+                stack.splice(0, 1);
+            }else if(match(topItem)) {
                 stack.splice(0, 1, ...topItem.bnf);
                 if(isTerminal(topItem)) {
+                    processTerminal(topItem);
                     index++;
                 }
             } else if(followMatch(topItem)) {
@@ -317,6 +383,7 @@
                 error('syntax', tokens[index].lexeme);
             }
         }
+        console.log(astArray[0]);
     }
 
     function getParser(type = 'recursiveDescent') {
