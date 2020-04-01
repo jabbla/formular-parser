@@ -50,5 +50,6 @@ export default function parser(input) {
             error('syntax', tokens[index].lexeme);
         }
     }
-    console.log(astArray[0]);
+
+    return astArray[0];
 };

@@ -383,7 +383,8 @@
                 error('syntax', tokens[index].lexeme);
             }
         }
-        console.log(astArray[0]);
+
+        return astArray[0];
     }
 
     function getParser(type = 'recursiveDescent') {
